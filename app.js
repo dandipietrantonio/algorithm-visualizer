@@ -16,18 +16,14 @@
 
 // }
 
-EPSILON = 0.1
+EPSILON = 0.12
 
 var pointsArr = []
+var pointCircles = []
+var blackLines = []
 
-var pointCircles = pointsArr.map(point => {
-    return {
-        "x_axis": point[0],
-        "y_axis": point[1],
-        "radius": 3,
-        "color": "black",
-    }
-}) 
+
+
 
 var svgContainer = d3.select("body")
     .append("svg")
@@ -41,7 +37,7 @@ var svgContainer = d3.select("body")
 //     .enter()
 //     .append("circle");
 
-// On Click, we want to add data to the array and chart
+// This click handler is based on the handler from http://bl.ocks.org/WilliamQLiu/76ae20060e19bf42d774
 svgContainer.on("click", (event) => {
     var coords = d3.pointer(event);
 
@@ -51,31 +47,54 @@ svgContainer.on("click", (event) => {
       Math.round(coords[1])
     ];
 
+    pointsArr.push([
+        clickCoords[0], clickCoords[1]
+    ])
 
     pointCircles.push({
         "x_axis": clickCoords[0],
         "y_axis": clickCoords[1],
-        "radius": 3,
+        "radius": 6,
         "color": "black",
-    });   // Push data to our array
-    console.log("POINTCIRCLES: ", pointCircles)
+    }); 
+
+    if (pointsArr.length > 1) {
+        const endIndex = pointCircles.length -1
+        blackLines.push({
+            "id": "a"+pointsArr[endIndex-1].toString().replace(',', '')+ pointsArr[endIndex].toString().replace(',', ''),
+            "x1": pointsArr[endIndex-1][0],
+            "y1": pointsArr[endIndex-1][1],
+            "x2": pointsArr[endIndex][0],
+            "y2": pointsArr[endIndex][1],
+        });
+    }
+    console.log("BLACK LINES: ", blackLines)
 
     var circles = svgContainer.selectAll("circle")  // For new circle, go through the update process
         .data(pointCircles)
         .enter()
         .append("circle");
+
+    var circleAttributes = circles
+        .attr("cx", d => d.x_axis)
+        .attr("cy", d => d.y_axis)
+        .attr("r", d => d.radius)
+        .style("fill", d => d.color);  
+
+    var lines = svgContainer.selectAll("line")
+        .data(blackLines)
+        .enter()
+        .append("line")
+
+    var lineAttributes = lines
+        .attr("stroke-width", 2)
+        .attr("stroke", "black")
+        .attr("id", d => d.id)
+        .attr("x1", d => d.x1)
+        .attr("y1", d => d.y1)
+        .attr("x2", d => d.x2)
+        .attr("y2", d => d.y2);
 })
-
-// for (var i=0; i < pointCircles.length-1; i++) {
-//     svgContainer.append("line")
-//         .attr("stroke-width", 2)
-//         .attr("stroke", "black")
-//         .attr("x1",  pointCircles[i].x_axis)
-//         .attr("y1",  pointCircles[i].y_axis)
-//         .attr("x2",  pointCircles[i+1].x_axis)
-//         .attr("y2",  pointCircles[i+1].y_axis);
-// }
-
 
 function RDP(points, epsilon) {
     // points should be an (ordered) array of (x,y) coordinates
@@ -92,8 +111,8 @@ function RDP(points, epsilon) {
         .attr("x2", endPoint[0])
         .attr("y2", endPoint[1]);
     const temp = findFurthestPoint(points);
+    console.log("TEMP: ", temp)
     if (temp) {
-        console.log("FURTHEST POINT: ", temp[0])
         const furthestPoint = temp[0];
         const furthestPointIndex = temp[1];
         const furthestPointDistance = temp[2];
@@ -104,6 +123,7 @@ function RDP(points, epsilon) {
                 .remove();
             console.log(points.slice(0, furthestPointIndex+1))
             arr2 = console.log(points.slice(furthestPointIndex, points.length))
+            console.log("RECURSIVE CALLS BEING MADE")
             RDP(points.slice(0, furthestPointIndex+1), epsilon)
             RDP(points.slice(furthestPointIndex, points.length), epsilon)
         }
@@ -111,14 +131,11 @@ function RDP(points, epsilon) {
     }
 }
 
-// RDP(pointsArr);
-
 function findFurthestPoint(points) {
     // points should be an (ordered) array of (x,y) coordinates
     // returns furthest point from the line connecting the first and last point
     // based on distance formula found in http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.6932
 
-    // return [[300,400], 3];
     const startPoint = points[0];
     const endPoint = points[ points.length -1 ]
     var curPoint = null;
@@ -150,4 +167,21 @@ function findFurthestPoint(points) {
         return [curMaxPoint, curMaxIndex, curMaxDistance]
     }
     else return null;
+}
+
+function start() {
+    svgContainer.selectAll("line")
+        .attr("stroke-dasharray", "10,10")
+    RDP(pointsArr, EPSILON);
+}
+
+
+function reset() {
+    pointsArr = [];
+    pointCircles = [];
+    blackLines = [];
+
+    svgContainer
+        .selectAll('*')
+        .remove();
 }
