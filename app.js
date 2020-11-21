@@ -18,22 +18,9 @@
 
 EPSILON = 0.1
 
+var pointsArr = []
 
-const pointsArr = [
-    [100, 150],
-    [200,350],
-    [300,400],
-    [315,210],
-    [235,100],
-    [440,95],
-    [410,285],
-    [360, 400],
-    [400, 400],
-    [580, 260],
-    [625, 200]
-]
-
-var jsonCircles = pointsArr.map(point => {
+var pointCircles = pointsArr.map(point => {
     return {
         "x_axis": point[0],
         "y_axis": point[1],
@@ -44,30 +31,49 @@ var jsonCircles = pointsArr.map(point => {
 
 var svgContainer = d3.select("body")
     .append("svg")
-    .attr("width", 2000)
-    .attr("height", 2000);
+    .attr("style", "outline: thin solid red")
+    .attr("width", 1800)
+    .attr("height", 900);
 
-for (var i=0; i < jsonCircles.length-1; i++) {
+// On Click, we want to add data to the array and chart
+svgContainer.on("click", (event) => {
+    var coords = d3.pointer(event);
+
+    // Normally we go from data to pixels, but here we're doing pixels to data
+    var clickCoords= [
+      Math.round(coords[0]),  // Takes the pixel number to convert to number
+      Math.round(coords[1])
+    ];
+
+
+    pointsArr.push(clickCoords);   // Push data to our array
+    console.log("POINTS ARR: ", pointsArr)
+
+    svgContainer.selectAll("circle")  // For new circle, go through the update process
+        .data(pointsArr)
+        .enter()
+        .append("circle")
+        .attr("x_axis", clickCoords[0])
+        .attr("y_axis", clickCoords[1])
+        .attr("radius", 3)
+        .attr("color", "black");
+})
+
+for (var i=0; i < pointCircles.length-1; i++) {
     svgContainer.append("line")
         .attr("stroke-width", 2)
         .attr("stroke", "black")
-        .attr("x1",  jsonCircles[i].x_axis)
-        .attr("y1",  jsonCircles[i].y_axis)
-        .attr("x2",  jsonCircles[i+1].x_axis)
-        .attr("y2",  jsonCircles[i+1].y_axis);
+        .attr("x1",  pointCircles[i].x_axis)
+        .attr("y1",  pointCircles[i].y_axis)
+        .attr("x2",  pointCircles[i+1].x_axis)
+        .attr("y2",  pointCircles[i+1].y_axis);
 }
 
 var circles = svgContainer
     .selectAll("circle")
-    .data(jsonCircles)
+    .data(pointCircles)
     .enter()
     .append("circle");
-   
-var circleAttributes = circles
-    .attr("cx", d => d.x_axis)
-    .attr("cy", d => d.y_axis)
-    .attr("r", d => d.radius)
-    .style("fill", d => d.color);
 
 var i = 0;
 function RDP(points, epsilon) {
