@@ -35,6 +35,12 @@ var svgContainer = d3.select("body")
     .attr("width", 1800)
     .attr("height", 900);
 
+// var circles = svgContainer
+//     .selectAll("circle")
+//     .data(pointCircles)
+//     .enter()
+//     .append("circle");
+
 // On Click, we want to add data to the array and chart
 svgContainer.on("click", (event) => {
     var coords = d3.pointer(event);
@@ -46,36 +52,31 @@ svgContainer.on("click", (event) => {
     ];
 
 
-    pointsArr.push(clickCoords);   // Push data to our array
-    console.log("POINTS ARR: ", pointsArr)
+    pointCircles.push({
+        "x_axis": clickCoords[0],
+        "y_axis": clickCoords[1],
+        "radius": 3,
+        "color": "black",
+    });   // Push data to our array
+    console.log("POINTCIRCLES: ", pointCircles)
 
-    svgContainer.selectAll("circle")  // For new circle, go through the update process
-        .data(pointsArr)
+    var circles = svgContainer.selectAll("circle")  // For new circle, go through the update process
+        .data(pointCircles)
         .enter()
-        .append("circle")
-        .attr("x_axis", clickCoords[0])
-        .attr("y_axis", clickCoords[1])
-        .attr("radius", 3)
-        .attr("color", "black");
+        .append("circle");
 })
 
-for (var i=0; i < pointCircles.length-1; i++) {
-    svgContainer.append("line")
-        .attr("stroke-width", 2)
-        .attr("stroke", "black")
-        .attr("x1",  pointCircles[i].x_axis)
-        .attr("y1",  pointCircles[i].y_axis)
-        .attr("x2",  pointCircles[i+1].x_axis)
-        .attr("y2",  pointCircles[i+1].y_axis);
-}
+// for (var i=0; i < pointCircles.length-1; i++) {
+//     svgContainer.append("line")
+//         .attr("stroke-width", 2)
+//         .attr("stroke", "black")
+//         .attr("x1",  pointCircles[i].x_axis)
+//         .attr("y1",  pointCircles[i].y_axis)
+//         .attr("x2",  pointCircles[i+1].x_axis)
+//         .attr("y2",  pointCircles[i+1].y_axis);
+// }
 
-var circles = svgContainer
-    .selectAll("circle")
-    .data(pointCircles)
-    .enter()
-    .append("circle");
 
-var i = 0;
 function RDP(points, epsilon) {
     // points should be an (ordered) array of (x,y) coordinates
     if (points.length <2) return;
@@ -150,5 +151,3 @@ function findFurthestPoint(points) {
     }
     else return null;
 }
-
-RDP(pointsArr, EPSILON)
