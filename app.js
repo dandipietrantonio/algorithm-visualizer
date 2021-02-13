@@ -17,7 +17,9 @@
 // }
 
 var EPSILON;
+
 var curDelay = 0;
+const timeUnit = 250;
 
 var pointsArr = [];
 var pointCircles = [];
@@ -184,9 +186,9 @@ function RDP(points, epsilon) {
   svgContainer
     .select('#' + id)
     .transition()
-    .duration(1000)
+    .duration(timeUnit)
     .delay(function (d) {
-      return curDelay++ * 1000;
+      return curDelay++ * timeUnit;
     })
     .attr('x2', endPoint[0])
     .attr('y2', endPoint[1]);
@@ -201,7 +203,7 @@ function RDP(points, epsilon) {
         .select('#' + id)
         .transition()
         .delay(function (d) {
-          return curDelay++ * 1000;
+          return curDelay++ * timeUnit;
         })
         .remove();
       RDP(points.slice(0, furthestPointIndex + 1), epsilon);
@@ -256,10 +258,10 @@ function findFurthestPoint(points) {
     console.log('curDelay Variable: ', curDelay);
     d3.select('#drawingLine' + id)
       .transition()
-      .duration(1000)
+      .duration(timeUnit)
       .delay(function (d) {
-        console.log('DELAY: ', (curDelay + i) * 1000);
-        return (curDelay + i) * 1000;
+        console.log('DELAY: ', (curDelay + i) * timeUnit);
+        return (curDelay + i) * timeUnit;
       })
       .attr('x2', 0)
       .attr('y2', 0)
