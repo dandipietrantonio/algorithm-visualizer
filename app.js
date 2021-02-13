@@ -17,7 +17,7 @@
 // }
 
 var EPSILON;
-var funcStack = [];
+var curDelay = 0;
 
 var pointsArr = [];
 var pointCircles = [];
@@ -165,21 +165,29 @@ svgContainer.on('click', (event) => {
 });
 
 function RDP(points, epsilon) {
-  d3.selectAll('#drawingLine').remove();
   // points should be an (ordered) array of (x,y) coordinates\
-
-  console.log('POINTS IN RDP: ', points);
+  console.log('in rdp');
   if (points.length <= 2) return;
   const startPoint = points[0];
   const endPoint = points[points.length - 1];
+  const id = 'a' + startPoint.toString().replace(',', '') + endPoint.toString().replace(',', '');
   console.log(startPoint, endPoint);
   svgContainer
     .append('line')
     .attr('stroke-width', 2)
     .attr('stroke', 'red')
-    .attr('id', 'a' + startPoint.toString().replace(',', '') + endPoint.toString().replace(',', ''))
+    .attr('id', id)
     .attr('x1', startPoint[0])
     .attr('y1', startPoint[1])
+    .attr('x2', startPoint[0])
+    .attr('y2', startPoint[1]);
+  svgContainer
+    .select('#' + id)
+    .transition()
+    .duration(1000)
+    .delay(function (d) {
+      return curDelay++ * 1000;
+    })
     .attr('x2', endPoint[0])
     .attr('y2', endPoint[1]);
   const temp = findFurthestPoint(points);
@@ -190,19 +198,14 @@ function RDP(points, epsilon) {
     const furthestPointDistance = temp[2];
     if (furthestPointDistance > epsilon) {
       svgContainer
-        .select(
-          '#a' + startPoint.toString().replace(',', '') + endPoint.toString().replace(',', ''),
-        )
+        .select('#' + id)
+        .transition()
+        .delay(function (d) {
+          return curDelay++ * 1000;
+        })
         .remove();
-      console.log('PUSHING RECURSIVE CALLS');
-      console.log('FURTHEST POINT INDEX: ', furthestPointIndex);
-      funcStack.push(() => {
-        RDP(points.slice(0, furthestPointIndex + 1), epsilon);
-      });
-      funcStack.push(() => {
-        RDP(points.slice(furthestPointIndex, points.length), epsilon);
-      });
-      console.log('MADE IT TO END OF PUSH BACK');
+      RDP(points.slice(0, furthestPointIndex + 1), epsilon);
+      RDP(points.slice(furthestPointIndex, points.length), epsilon);
     }
     return;
   }
@@ -215,6 +218,8 @@ function findFurthestPoint(points) {
   //    2. the point is closest to the end point
   //    3. the point is closest to another point on the line (this is its perpindicular distance)
   // this implementation accounts for all three cases
+
+  console.log('finding furthest point. delay is ', curDelay);
 
   const startPoint = points[0];
   const endPoint = points[points.length - 1];
@@ -233,9 +238,12 @@ function findFurthestPoint(points) {
     const xCurPoint = curPoint[0];
     const yCurPoint = curPoint[1];
 
+    const id = xCurPoint.toString() + yCurPoint.toString() + curDelay.toString();
+
     svgContainer
       .append('line')
-      .attr('id', 'drawingLine')
+      .attr('id', 'drawingLine' + id) // guaranteed to be unique
+      .attr('class', 'drawingLine')
       .attr('stroke-width', 2)
       .attr('stroke', 'orange')
       // .attr('id', 'a' + startPoint.toString().replace(',', '') + endPoint.toString().replace(',', ''))
@@ -245,15 +253,20 @@ function findFurthestPoint(points) {
       .attr('y2', yCurPoint);
 
     console.log('i: ', i);
-    d3.selectAll('#drawingLine')
+    console.log('curDelay Variable: ', curDelay);
+    d3.select('#drawingLine' + id)
       .transition()
-      .duration(2000)
+      .duration(1000)
       .delay(function (d) {
-        console.log('DELAY: ', i * 1000);
-        return i * 1000;
+        console.log('DELAY: ', (curDelay + i) * 1000);
+        return (curDelay + i) * 1000;
       })
       .attr('x2', 0)
-      .attr('y2', 0);
+      .attr('y2', 0)
+      .on('end', () => {
+        console.log('deleting point ' + id);
+        svgContainer.select('#drawingLine' + id).remove();
+      });
 
     var A = xCurPoint - xStart;
     var B = yCurPoint - yStart;
@@ -291,6 +304,7 @@ function findFurthestPoint(points) {
       curMaxIndex = i;
     }
   }
+  curDelay += i;
   if (curMaxPoint) {
     console.log('MAX DISTANCE: ', curMaxDistance);
     return [curMaxPoint, curMaxIndex, curMaxDistance];
@@ -298,9 +312,8 @@ function findFurthestPoint(points) {
 }
 
 d3.select('body').on('keydown', (e) => {
-  if (e.code === 'Space' && funcStack.length) {
-    console.log('FUNC STACK: ', funcStack);
-    funcStack.pop()();
+  if (e.code === 'Space') {
+    console.log('pressed space');
   }
 });
 
@@ -317,6 +330,8 @@ function reset() {
   distancePoints = [];
   distancePointCircles = [];
   distanceLine = [];
+
+  curDelay = 0;
 
   svgContainer.selectAll('*').remove();
   distanceContainer.selectAll('*').remove();
