@@ -17,6 +17,7 @@
 // }
 
 var EPSILON;
+var funcStack = [];
 
 var pointsArr = [];
 var pointCircles = [];
@@ -29,7 +30,7 @@ var distanceLine = [];
 var distanceContainer = d3
   .select('#RDP')
   .append('svg')
-  .attr('style', 'outline: thin solid blue')
+  .attr('style', 'outline: thin solid blue; margin-bottom: 10px')
   .attr('width', '100%')
   .attr('height', '20%');
 
@@ -164,8 +165,11 @@ svgContainer.on('click', (event) => {
 });
 
 function RDP(points, epsilon) {
-  // points should be an (ordered) array of (x,y) coordinates
-  if (points.length < 2) return;
+  d3.selectAll('#drawingLine').remove();
+  // points should be an (ordered) array of (x,y) coordinates\
+
+  console.log('POINTS IN RDP: ', points);
+  if (points.length <= 2) return;
   const startPoint = points[0];
   const endPoint = points[points.length - 1];
   console.log(startPoint, endPoint);
@@ -190,11 +194,15 @@ function RDP(points, epsilon) {
           '#a' + startPoint.toString().replace(',', '') + endPoint.toString().replace(',', ''),
         )
         .remove();
-      console.log(points.slice(0, furthestPointIndex + 1));
-      arr2 = console.log(points.slice(furthestPointIndex, points.length));
-      console.log('RECURSIVE CALLS BEING MADE');
-      RDP(points.slice(0, furthestPointIndex + 1), epsilon);
-      RDP(points.slice(furthestPointIndex, points.length), epsilon);
+      console.log('PUSHING RECURSIVE CALLS');
+      console.log('FURTHEST POINT INDEX: ', furthestPointIndex);
+      funcStack.push(() => {
+        RDP(points.slice(0, furthestPointIndex + 1), epsilon);
+      });
+      funcStack.push(() => {
+        RDP(points.slice(furthestPointIndex, points.length), epsilon);
+      });
+      console.log('MADE IT TO END OF PUSH BACK');
     }
     return;
   }
@@ -224,6 +232,28 @@ function findFurthestPoint(points) {
     const curPoint = points[i];
     const xCurPoint = curPoint[0];
     const yCurPoint = curPoint[1];
+
+    svgContainer
+      .append('line')
+      .attr('id', 'drawingLine')
+      .attr('stroke-width', 2)
+      .attr('stroke', 'orange')
+      // .attr('id', 'a' + startPoint.toString().replace(',', '') + endPoint.toString().replace(',', ''))
+      .attr('x1', xCurPoint)
+      .attr('y1', yCurPoint)
+      .attr('x2', xCurPoint)
+      .attr('y2', yCurPoint);
+
+    console.log('i: ', i);
+    d3.selectAll('#drawingLine')
+      .transition()
+      .duration(2000)
+      .delay(function (d) {
+        console.log('DELAY: ', i * 1000);
+        return i * 1000;
+      })
+      .attr('x2', 0)
+      .attr('y2', 0);
 
     var A = xCurPoint - xStart;
     var B = yCurPoint - yStart;
@@ -267,6 +297,13 @@ function findFurthestPoint(points) {
   } else return null;
 }
 
+d3.select('body').on('keydown', (e) => {
+  if (e.code === 'Space' && funcStack.length) {
+    console.log('FUNC STACK: ', funcStack);
+    funcStack.pop()();
+  }
+});
+
 function start() {
   svgContainer.selectAll('line').attr('stroke-dasharray', '10,10');
   RDP(pointsArr, EPSILON);
@@ -285,40 +322,15 @@ function reset() {
   distanceContainer.selectAll('*').remove();
 }
 
-// function findFurthestPoint(points) {
-//     // points should be an (ordered) array of (x,y) coordinates
-//     // returns furthest point from the line connecting the first and last point
-//     // based on distance formula found in http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.17.6932
-
-//     const startPoint = points[0];
-//     const endPoint = points[ points.length -1 ]
-//     var curPoint = null;
-//     var curMaxPoint = null;
-//     var curMaxDistance = 0
-//     var curMaxIndex;
-//     for (var i=1; i<points.length -1; i++) {
-//         curPoint = points[i];
-//         const numerator = math.det([
-//             [1, startPoint[0], startPoint[1]],
-//             [1, endPoint[0], endPoint[1]],
-//             [1, curPoint[0], curPoint[1]],
-//         ]);
-//         // console.log("DET:", numerator)
-//         const denominator = Math.pow((startPoint[0] - endPoint[0]), 2) + Math.pow((startPoint[1] - endPoint[1]), 2);
-//         const distance = Math.pow(numerator / denominator, 2);
-//         // console.log("START: ", startPoint);
-//         // console.log("END: ", endPoint);
-//         // console.log("CUR: ", curPoint);
-//         // console.log("DISTANCE: ", distance)
-//         if (distance > curMaxDistance) {
-//             curMaxDistance = distance;
-//             curMaxPoint = curPoint;
-//             curMaxIndex = i;
-//         }
-//     }
-//     if (curMaxPoint) {
-//         console.log("MAX DISTANCE: ", curMaxDistance)
-//         return [curMaxPoint, curMaxIndex, curMaxDistance]
-//     }
-//     else return null;
-// }
+// CASES
+// 1. No distance point plotted
+// 2. One distance point plotted
+// 3. Distance points plotted; plotting line segment
+// 4. 'Run RDP' initially hit
+// 5. Illustrating first polyline (ie: from start to end)
+// 6. Calculating (and showing) distance of a point with another point after
+//    - in this state, we have to keep track of what point we're currently on in a global variable
+// 7. Calculating (and showing) distance of a point without another point after
+// 8. Showing furthest point from the proposed simplified line
+//    - if it's closer than epsilon, we finish
+//    - otherwise, we set it as a new endpoint and recursively operate on the left and right

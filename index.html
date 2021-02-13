@@ -19,8 +19,18 @@
     <div class="sidebar">
       <h1>The Douglas-Peucker Algorithm</h1>
       <p>
-        The Douglas-Peucker Algorithm (sometimes called Ramer-Douglas-Peucker algorithm) is an
-        intuitive, recursive line simplification algorithm.
+        The
+        <a href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm"
+          >Douglas-Peucker Algorithm</a
+        >
+        is an intuitive, recursive line simplification algorithm.
+      </p>
+      <p>
+        To use this visualizer, first click two points in the blue box. This will be your distance
+        value. Next, create a polyline in the red box by clicking wherever you want the points to
+        go. Once you're ready, hit "Run RDP", and your line will be simplified such that no point on
+        the original polyline is further than the length of the line you drew in the blue box from
+        the simplified polyline. Hit "Reset" to start again.
       </p>
       <button type="button" onClick="start()">Run RDP</button>
       <button type="button" onClick="reset()">Reset</button>
