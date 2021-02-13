@@ -191,7 +191,6 @@ function RDP(points, epsilon) {
         )
         .remove();
       console.log(points.slice(0, furthestPointIndex + 1));
-      arr2 = console.log(points.slice(furthestPointIndex, points.length));
       console.log('RECURSIVE CALLS BEING MADE');
       RDP(points.slice(0, furthestPointIndex + 1), epsilon);
       RDP(points.slice(furthestPointIndex, points.length), epsilon);
