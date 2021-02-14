@@ -1,20 +1,25 @@
-// function coinFlip() {
-//     return Math.floor(Math.random() * 2);
-// }
+const messages = {
+  default:
+    '<p> The <a href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm"   >Douglas-Peucker Algorithm</a > is an intuitive, recursive line simplification algorithm. To use this visualizer, first click two points in the blue box. This will be your distance value. Next, create a polyline in the red box by clicking wherever you want the points to go. Once you\'re ready, hit "Run RDP", and your line will be simplified such that no point on the original polyline is further than the length of the line you drew in the blue box from the simplified polyline. Hit "Reset" to start again. </p>',
+  firstStep: '<p>First, we draw a line from the start point to the end point.</p>',
+  consideringNewLine:
+    '<p>The line highlighted in blue is our current potential output. In order to see if this line is an accurate representation of the original polyline, we must make sure that every point between the start point and end point are within a distance of epsilon of this simplified line, where epsilon is the length of the line you drew in the blue box above.</p>',
+  calculatingDistance:
+    '<p>We go through each point between the start and end of our current line and calculate its distance from the line. <br/><br/> The distance formula we use for this calculation is as follows: if a point is within range of the line, we take its perpendicular distance to the line. If a point is outside of the range of the line, we take its distance to either endpoint that it is closest to.</p>',
+  foundFurthestPoint:
+    '<p>Next we find the point with the largest distance from the simplified line. Here it is highlighted in lime green. We take its distance value and compare it to our epsilon value.</p>',
+  outsideEpsilon:
+    '<p>In this case, the furthest point was further than epsilon away from the simplified line. Thus, our simplified line is not good enough. <br/><br/>To fix this, we split the line into two more lines. The first one goes from the start point to the furthest point; the second one goes from the furthest point to the end point. We now make two recursive calls: first on the line from start to furthest point, and then on the line from furthest point to end.</p>',
+  withinEpsilon:
+    '<p>In this case, even the furthest point from the simplified line is still within our epsilon range. Thus we conclude that this line is a valid simplification of the original polyline! We change its color to red to represent that, once all remaining recursive calls are completed, this line should be a part of the final simplified polylne output.</p>',
+  onlyTwoPoints:
+    '<p>Since this polyline only consists of one line segment, there are no more simplifications to be made; we highlight the line in red to indicate that it will be a part of our final polyline output.</p>',
+  allDone:
+    "<p>And now we're done! The simplified polyline is shown in red, and the original polyline can be seen in dashed black lines. All points on the original polyline are no further than epsilon from the simplified polyline. <br/><br/> To run this demo again, hit the 'Reset' button below!</p>",
+};
 
-// function generateRandomPolyLineArray() {
-//     const NUM_VERTICES = 10;
-//     var ret = [[5,5]];
-
-//     for (var i=1; i < NUM_VERTICES; i++) {
-//         const x = Math.floor(Math.random() * 90 * i) + 10
-//         const y = Math.floor(Math.random() * 90 * i) + 10
-//         var negatingLeftOrRight = "neither";
-//         ret.push([x,y])
-//     }
-//     return ret
-
-// }
+var descriptiveTextDiv = document.getElementById('descriptive-text');
+descriptiveTextDiv.innerHTML = messages.default;
 
 var EPSILON;
 
@@ -202,7 +207,23 @@ function drawLine(startPoint, endPoint, endFunc = () => {}) {
     });
 }
 
+function consideringPolylineWithTwoPoints(curPoints, epsilon) {
+  descriptiveTextDiv.innerHTML = messages.onlyTwoPoints;
+  const startPoint = curPoints[0];
+  const endPoint = curPoints[curPoints.length - 1];
+
+  const lineId =
+    'a' + startPoint.toString().replace(',', 'l') + endPoint.toString().replace(',', 'l');
+
+  svgContainer
+    .select('#' + lineId)
+    .transition()
+    .attr('stroke', 'red');
+}
+
 function RDP(curPoints, epsilon) {
+  descriptiveTextDiv.innerHTML = messages.firstStep;
+
   drawLine(curPoints[0], curPoints[curPoints.length - 1]);
 
   FUNC_QUEUE.push(() => {
@@ -211,23 +232,24 @@ function RDP(curPoints, epsilon) {
 }
 
 function startOnLine(curPoints, epsilon) {
+  descriptiveTextDiv.innerHTML = messages.consideringNewLine;
+
   const startPoint = curPoints[0];
   const endPoint = curPoints[curPoints.length - 1];
 
   const lineId =
     'a' + startPoint.toString().replace(',', 'l') + endPoint.toString().replace(',', 'l');
 
-  if (curPoints.length === 2) {
-    svgContainer
-      .select('#' + lineId)
-      .transition()
-      .attr('stroke', 'red');
-  } else {
-    svgContainer
-      .select('#' + lineId)
-      .transition()
-      .attr('stroke', 'blue');
+  svgContainer
+    .select('#' + lineId)
+    .transition()
+    .attr('stroke', 'blue');
 
+  if (curPoints.length === 2) {
+    FUNC_QUEUE.push(() => {
+      consideringPolylineWithTwoPoints(curPoints, epsilon);
+    });
+  } else {
     FUNC_QUEUE.push(() => {
       findFurthestPoint(curPoints, epsilon);
     });
@@ -239,10 +261,11 @@ function findFurthestPoint(curPoints, epsilon) {
   // we have 3 cases:
   //    1. the point is closest to the start point
   //    2. the point is closest to the end point
-  //    3. the point is closest to another point on the line (this is its perpindicular distance)
+  //    3. the point is closest to another point on the line (this is its perpendicular distance)
   // this implementation accounts for all three cases
 
   disableNextBtn();
+  descriptiveTextDiv.innerHTML = messages.calculatingDistance;
 
   const startPoint = curPoints[0];
   const endPoint = curPoints[curPoints.length - 1];
@@ -352,6 +375,7 @@ function findFurthestPoint(curPoints, epsilon) {
 
 function highlight_furthest(curPoints, epsilon, maxObj) {
   disableNextBtn();
+  descriptiveTextDiv.innerHTML = messages.foundFurthestPoint;
 
   const maxLineID = 'distanceLine' + maxObj.maxPointID;
   // Removing all of the non-furthest lines and highlighting the furthest
@@ -412,6 +436,8 @@ function breakLineIntoTwo(curPoints, epsilon, maxObj) {
     });
 
   if (maxObj.maxDistance > epsilon) {
+    descriptiveTextDiv.innerHTML = messages.outsideEpsilon;
+
     disableNextBtn();
 
     svgContainer
@@ -432,20 +458,21 @@ function breakLineIntoTwo(curPoints, epsilon, maxObj) {
     const firstHalfPoints = curPoints.slice(0, maxObj.maxIndex + 1);
     const secondHalfPoints = curPoints.slice(maxObj.maxIndex, curPoints.length);
 
-    if (curPoints.length > 3) {
-      FUNC_QUEUE.push(() => {
-        startOnLine(firstHalfPoints, epsilon);
-      });
-      FUNC_STACK.push(() => {
-        startOnLine(secondHalfPoints, epsilon);
-      });
-    }
+    FUNC_QUEUE.push(() => {
+      startOnLine(firstHalfPoints, epsilon);
+    });
+    FUNC_STACK.push(() => {
+      startOnLine(secondHalfPoints, epsilon);
+    });
   }
-  if (maxObj.maxDistance <= epsilon || curPoints.length <= 3) {
+  if (maxObj.maxDistance <= epsilon) {
+    descriptiveTextDiv.innerHTML = messages.withinEpsilon;
+
     svgContainer
       .select('#' + idOfCurLine)
       .transition()
       .attr('stroke', 'red');
+    enableNextBtn();
   }
 }
 
@@ -466,6 +493,9 @@ function reset() {
   FUNC_STACK = [];
   FUNC_QUEUE = [];
 
+  disableNextBtn();
+  descriptiveTextDiv.innerHTML = messages.default;
+
   svgContainer.selectAll('*').remove();
   distanceContainer.selectAll('*').remove();
 }
@@ -473,7 +503,8 @@ function reset() {
 function next() {
   if (FUNC_QUEUE.length !== 0) FUNC_QUEUE.pop(0)();
   else if (FUNC_STACK.length !== 0) FUNC_STACK.pop()();
-  else console.log('Pressed space with nothing left to do!');
+  else descriptiveTextDiv.innerHTML = messages.allDone;
+
   console.log('Func queue afetr space: ', FUNC_QUEUE);
 }
 
