@@ -11,6 +11,26 @@
   padding-top: 20px;
 }
 
+.descriptive-text {
+  margin-left: 5px;
+  margin-right: 5px;
+}
+
+.buttonsDiv {
+  position: absolute;
+  bottom: 0;
+  margin-left: 50px;
+  margin-bottom: 20px;
+}
+
+.line-colors-key {
+  margin-left: 5px;
+  margin-right: 5px;
+  margin-bottom: 45px;
+  position: absolute;
+  bottom: 0;
+}
+
 .RDP {
   margin-top: 20px;
   margin-bottom: 20px;

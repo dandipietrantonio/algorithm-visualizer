@@ -18,12 +18,43 @@
   <body>
     <div class="sidebar">
       <h1>The Douglas-Peucker Algorithm</h1>
-      <p>
-        The Douglas-Peucker Algorithm (sometimes called Ramer-Douglas-Peucker algorithm) is an
-        intuitive, recursive line simplification algorithm.
-      </p>
-      <button type="button" onClick="start()">Run RDP</button>
-      <button type="button" onClick="reset()">Reset</button>
+      <hr />
+      <div id="descriptive-text" class="descriptive-text">
+        <!-- descriptive text is put here using javascript in app.js depending on the state of the program -->
+      </div>
+      <div class="line-colors-key">
+        <p>
+          <span style="color: white; background-color: black">Black</span> lines are a part of the
+          original polyline you drew.
+        </p>
+        <p>
+          <span style="background-color: gray">Gray</span> lines are currently waiting to be
+          recursively operated on.
+        </p>
+        <p>
+          The <span style="background-color: blue">blue</span> line is currently being checked as a
+          valid simplification.
+        </p>
+        <p>
+          <span style="background-color: red">Red</span> lines are a part of the final simplified
+          polyline output.
+        </p>
+        <p>
+          <span style="background-color: orange">Orange</span> lines are temporary distance
+          measurements.
+        </p>
+        <p>
+          <span style="background-color: lime">Lime</span> lines show the furthest point from the
+          currently considered simplification line.
+        </p>
+        <hr />
+      </div>
+      <hr />
+      <div class="buttonsDiv">
+        <button type="button" id="startBtn" onClick="start()">Run RDP</button>
+        <button type="button" onClick="reset()">Reset</button>
+        <button type="button" id="nextBtn" onClick="next()" disabled>Next</button>
+      </div>
     </div>
     <div class="RDP" id="RDP"></div>
   </body>
