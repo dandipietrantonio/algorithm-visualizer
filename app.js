@@ -120,29 +120,39 @@ svgContainer.on('click', (event) => {
     Math.round(coords[1]),
   ];
 
-  pointsArr.push([clickCoords[0], clickCoords[1]]);
-
-  pointCircles.push({
-    x_axis: clickCoords[0],
-    y_axis: clickCoords[1],
-    radius: 6,
-    color: 'black',
+  duplicateClick = false;
+  pointsArr.forEach((point) => {
+    if (point[0] === clickCoords[0] && point[1] === clickCoords[1]) {
+      console.log('DUP!!!!!');
+      duplicateClick = true;
+    }
   });
 
-  if (pointsArr.length > 1) {
-    const endIndex = pointCircles.length - 1;
-    blackLines.push({
-      id:
-        'a' +
-        pointsArr[endIndex - 1].toString().replace(',', '') +
-        pointsArr[endIndex].toString().replace(',', ''),
-      x1: pointsArr[endIndex - 1][0],
-      y1: pointsArr[endIndex - 1][1],
-      x2: pointsArr[endIndex][0],
-      y2: pointsArr[endIndex][1],
+  if (!duplicateClick) {
+    pointsArr.push([clickCoords[0], clickCoords[1]]);
+
+    pointCircles.push({
+      x_axis: clickCoords[0],
+      y_axis: clickCoords[1],
+      radius: 6,
+      color: 'black',
     });
+
+    if (pointsArr.length > 1) {
+      const endIndex = pointCircles.length - 1;
+      blackLines.push({
+        id:
+          'a' +
+          pointsArr[endIndex - 1].toString().replace(',', '') +
+          pointsArr[endIndex].toString().replace(',', ''),
+        x1: pointsArr[endIndex - 1][0],
+        y1: pointsArr[endIndex - 1][1],
+        x2: pointsArr[endIndex][0],
+        y2: pointsArr[endIndex][1],
+      });
+    }
+    console.log('BLACK LINES: ', blackLines);
   }
-  console.log('BLACK LINES: ', blackLines);
 
   var circles = svgContainer
     .selectAll('circle') // For new circle, go through the update process
@@ -168,20 +178,13 @@ svgContainer.on('click', (event) => {
     .attr('y2', (d) => d.y2);
 });
 
-function RDP(curPoints, epsilon) {
-  drawLine(curPoints[0], curPoints[curPoints.length - 1]);
-
-  FUNC_QUEUE.push(() => {
-    findFurthestPoint(curPoints, epsilon);
-  });
-}
-
 function drawLine(startPoint, endPoint, endFunc = () => {}) {
+  disableNextBtn();
   const id = 'a' + startPoint.toString().replace(',', 'l') + endPoint.toString().replace(',', 'l');
   svgContainer
     .append('line')
     .attr('stroke-width', 2)
-    .attr('stroke', 'red')
+    .attr('stroke', 'gray')
     .attr('id', id)
     .attr('x1', startPoint[0])
     .attr('y1', startPoint[1])
@@ -193,7 +196,42 @@ function drawLine(startPoint, endPoint, endFunc = () => {}) {
     .duration(timeUnit)
     .attr('x2', endPoint[0])
     .attr('y2', endPoint[1])
-    .on('end', endFunc);
+    .on('end', () => {
+      endFunc();
+      enableNextBtn();
+    });
+}
+
+function RDP(curPoints, epsilon) {
+  drawLine(curPoints[0], curPoints[curPoints.length - 1]);
+
+  FUNC_QUEUE.push(() => {
+    startOnLine(curPoints, epsilon);
+  });
+}
+
+function startOnLine(curPoints, epsilon) {
+  const startPoint = curPoints[0];
+  const endPoint = curPoints[curPoints.length - 1];
+
+  const lineId =
+    'a' + startPoint.toString().replace(',', 'l') + endPoint.toString().replace(',', 'l');
+
+  if (curPoints.length === 2) {
+    svgContainer
+      .select('#' + lineId)
+      .transition()
+      .attr('stroke', 'red');
+  } else {
+    svgContainer
+      .select('#' + lineId)
+      .transition()
+      .attr('stroke', 'blue');
+
+    FUNC_QUEUE.push(() => {
+      findFurthestPoint(curPoints, epsilon);
+    });
+  }
 }
 
 function findFurthestPoint(curPoints, epsilon) {
@@ -203,6 +241,8 @@ function findFurthestPoint(curPoints, epsilon) {
   //    2. the point is closest to the end point
   //    3. the point is closest to another point on the line (this is its perpindicular distance)
   // this implementation accounts for all three cases
+
+  disableNextBtn();
 
   const startPoint = curPoints[0];
   const endPoint = curPoints[curPoints.length - 1];
@@ -263,6 +303,8 @@ function findFurthestPoint(curPoints, epsilon) {
       yy = yStart + param * D;
     }
 
+    const curIdx = i;
+
     svgContainer
       .select('#distanceLine' + id)
       .transition()
@@ -272,7 +314,14 @@ function findFurthestPoint(curPoints, epsilon) {
         return i * timeUnit;
       })
       .attr('x2', xx)
-      .attr('y2', yy);
+      .attr('y2', yy)
+      .on('end', () => {
+        console.log('cur Idx!!', curIdx);
+        if (curIdx === curPoints.length - 2) {
+          // only when we hit the last element
+          enableNextBtn();
+        }
+      });
 
     var dx = xCurPoint - xx;
     var dy = yCurPoint - yy;
@@ -302,15 +351,16 @@ function findFurthestPoint(curPoints, epsilon) {
 }
 
 function highlight_furthest(curPoints, epsilon, maxObj) {
-  const maxLineID = 'distanceLine' + maxObj.maxPointID;
-  console.log('highlighting furthest, arguments: ', arguments);
+  disableNextBtn();
 
+  const maxLineID = 'distanceLine' + maxObj.maxPointID;
   // Removing all of the non-furthest lines and highlighting the furthest
   if (curPoints.length === 3) {
     svgContainer
       .select('#' + maxLineID)
       .transition()
       .attr('stroke', 'lime');
+    enableNextBtn();
   } else {
     svgContainer
       .selectAll('.distanceLine')
@@ -332,6 +382,7 @@ function highlight_furthest(curPoints, epsilon, maxObj) {
           .select('#' + maxLineID)
           .transition()
           .attr('stroke', 'lime');
+        enableNextBtn();
       });
   }
 
@@ -341,7 +392,14 @@ function highlight_furthest(curPoints, epsilon, maxObj) {
 }
 
 function breakLineIntoTwo(curPoints, epsilon, maxObj) {
+  disableNextBtn();
+
   const idOfDistanceLineToRemove = 'distanceLine' + maxObj.maxPointID;
+  const idOfCurLine =
+    'a' +
+    curPoints[0].toString().replace(',', 'l') +
+    curPoints[curPoints.length - 1].toString().replace(',', 'l');
+
   svgContainer
     .select('#' + idOfDistanceLineToRemove)
     .transition()
@@ -350,44 +408,44 @@ function breakLineIntoTwo(curPoints, epsilon, maxObj) {
     .style('fill-opacity', 0)
     .on('end', () => {
       svgContainer.select('#' + idOfDistanceLineToRemove).remove();
+      if (maxObj.maxDistance <= epsilon) enableNextBtn(); // need to do it here since we won't go into conditional below
     });
 
-  console.log('MAX OBJ BEFORE RECURSING: ', maxObj);
   if (maxObj.maxDistance > epsilon) {
-    const idOfSimplifiedLineToRemove =
-      'a' +
-      curPoints[0].toString().replace(',', 'l') +
-      curPoints[curPoints.length - 1].toString().replace(',', 'l');
+    disableNextBtn();
+
     svgContainer
-      .select('#' + idOfSimplifiedLineToRemove)
+      .select('#' + idOfCurLine)
       .transition()
       .delay(timeUnit) // so the distance line is removed first
       .duration(timeUnit)
       .style('stroke-opacity', 0)
       .style('fill-opacity', 0)
       .on('end', () => {
-        console.log('hi');
-        svgContainer.select('#' + idOfSimplifiedLineToRemove).remove();
+        svgContainer.select('#' + idOfCurLine).remove();
         drawLine(curPoints[0], maxObj.maxPoint, () => {
           drawLine(maxObj.maxPoint, curPoints[curPoints.length - 1]);
         });
+        enableNextBtn();
       });
 
     const firstHalfPoints = curPoints.slice(0, maxObj.maxIndex + 1);
     const secondHalfPoints = curPoints.slice(maxObj.maxIndex, curPoints.length);
 
-    if (firstHalfPoints.length > 2) {
+    if (curPoints.length > 3) {
       FUNC_QUEUE.push(() => {
-        findFurthestPoint(firstHalfPoints, epsilon);
+        startOnLine(firstHalfPoints, epsilon);
       });
-    }
-    if (secondHalfPoints.length > 2) {
       FUNC_STACK.push(() => {
-        findFurthestPoint(secondHalfPoints, epsilon);
+        startOnLine(secondHalfPoints, epsilon);
       });
     }
-  } else {
-    console.log('this line is done!');
+  }
+  if (maxObj.maxDistance <= epsilon || curPoints.length <= 3) {
+    svgContainer
+      .select('#' + idOfCurLine)
+      .transition()
+      .attr('stroke', 'red');
   }
 }
 
@@ -417,6 +475,14 @@ function next() {
   else if (FUNC_STACK.length !== 0) FUNC_STACK.pop()();
   else console.log('Pressed space with nothing left to do!');
   console.log('Func queue afetr space: ', FUNC_QUEUE);
+}
+
+function enableNextBtn() {
+  document.getElementById('nextBtn').disabled = false;
+}
+
+function disableNextBtn() {
+  document.getElementById('nextBtn').disabled = true;
 }
 
 // d3.select('body').on('keydown', (e) => {
