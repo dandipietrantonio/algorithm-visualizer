@@ -1,6 +1,6 @@
 const messages = {
   default:
-    '<p> The <a href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm"   >Douglas-Peucker Algorithm</a > is an intuitive, recursive line simplification algorithm. To use this visualizer, first click two points in the blue box. This will be your distance value. Next, create a polyline in the red box by clicking wherever you want the points to go. Once you\'re ready, hit "Run RDP", and your line will be simplified such that no point on the original polyline is further than the length of the line you drew in the blue box from the simplified polyline. Hit "Reset" to start again. </p>',
+    '<p> The <a href="https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm"   >Douglas-Peucker Algorithm</a > is an intuitive, recursive line simplification algorithm.<br/><br/>To use this visualizer, first click two points in the blue box. This will be your epsilon value. Next, create a polyline in the red box by clicking wherever you want the points to go. Once you\'re ready, hit "Run RDP", and the Douglas-Peucker algorithm will be performed, with explanations in the sidebar. Hit "Next" to get to the next step. Hit "Reset" to start again. </p>',
   firstStep: '<p>First, we draw a line from the start point to the end point.</p>',
   consideringNewLine:
     '<p>The line highlighted in blue is our current potential output. In order to see if this line is an accurate representation of the original polyline, we must make sure that every point between the start point and end point are within a distance of epsilon of this simplified line, where epsilon is the length of the line you drew in the blue box above.</p>',
@@ -474,8 +474,17 @@ function breakLineIntoTwo(curPoints, epsilon, maxObj) {
 }
 
 function start() {
+  if (distancePoints.length !== 2) {
+    window.alert('Please make sure you draw a line in the blue box for your epsilon value.');
+    return;
+  }
+  if (pointsArr.length <= 1) {
+    window.alert('Please make sure you draw at least two points for the polyline in the red box.');
+    return;
+  }
+
   RUNNING_RDP = true;
-  document.getElementById('startBtn').disabled = true;
+  disableStartBtn();
 
   svgContainer.selectAll('line').attr('stroke-dasharray', '10,10');
   RDP(pointsArr, EPSILON);
@@ -494,7 +503,7 @@ function reset() {
   FUNC_STACK = [];
   FUNC_QUEUE = [];
 
-  document.getElementById('startBtn').disabled = false;
+  enableStartBtn();
   disableNextBtn();
   descriptiveTextDiv.innerHTML = messages.default;
 
@@ -517,4 +526,12 @@ function enableNextBtn() {
 
 function disableNextBtn() {
   document.getElementById('nextBtn').disabled = true;
+}
+
+function enableStartBtn() {
+  document.getElementById('startBtn').disabled = false;
+}
+
+function disableStartBtn() {
+  document.getElementById('startBtn').disabled = true;
 }
