@@ -7,7 +7,9 @@ const messages = {
   calculatingDistance:
     '<p>We go through each point between the start and end of our current line and calculate its distance from the line. <br/><br/> The distance formula we use for this calculation is as follows: if a point is within range of the line, we take its perpendicular distance to the line. If a point is outside of the range of the line, we take its distance to either endpoint that it is closest to.</p>',
   foundFurthestPoint:
-    '<p>Next we find the point with the largest distance from the simplified line. Here it is highlighted in lime green. We take its distance value and compare it to our epsilon value.</p>',
+    '<p>Next we find the point with the largest distance from the simplified line. Here it is highlighted in lime green.</p>',
+  drawingEpsilonNextToFurthest:
+    '<p>We take our furthest point and compare it to our epsilon value, shown in pink. If our epsilon value does not pass the simplified polyline, we know that the point is further than epsilon away from the polyline and thus must be simplified. If the epsilon value passes the polyline, however, we know that this point is within a distance epsilon from the polyline and thus we need not simplify the line further.</p>',
   outsideEpsilon:
     '<p>In this case, the furthest point was further than epsilon away from the simplified line. Thus, our simplified line is not good enough. <br/><br/>To fix this, we split the line into two more lines. The first one goes from the start point to the furthest point; the second one goes from the furthest point to the end point. We now make two recursive calls: first on the line from start to furthest point, and then on the line from furthest point to end.</p>',
   withinEpsilon:
@@ -63,7 +65,7 @@ distanceContainer.on('click', (event) => {
         x_axis: clickCoords[0],
         y_axis: clickCoords[1],
         radius: 6,
-        color: 'green',
+        color: '#FF69B4',
       });
 
       if (distancePoints.length > 1) {
@@ -96,7 +98,7 @@ distanceContainer.on('click', (event) => {
 
       var lineAttributes = lines
         .attr('stroke-width', 2)
-        .attr('stroke', 'green')
+        .attr('stroke', '#FF69B4')
         .attr('id', (d) => d.id)
         .attr('x1', (d) => d.x1)
         .attr('y1', (d) => d.y1)
@@ -282,6 +284,8 @@ function findFurthestPoint(curPoints, epsilon) {
   var curMaxPoint = null;
   var curMaxDistance = 0;
   var curMaxIndex;
+  var curMaxDx = 0;
+  var curMaxDy = 0;
 
   for (var i = 1; i < curPoints.length - 1; i++) {
     const curPoint = curPoints[i];
@@ -358,6 +362,10 @@ function findFurthestPoint(curPoints, epsilon) {
       curMaxPoint = curPoint;
       curMaxIndex = i;
       curMaxPointID = id;
+      curMaxDx = dx;
+      curMaxDy = dy;
+      curMaxXX = xx;
+      curMaxYY = yy;
     }
   }
   if (curMaxPoint) {
@@ -367,6 +375,8 @@ function findFurthestPoint(curPoints, epsilon) {
         maxIndex: curMaxIndex,
         maxDistance: curMaxDistance,
         maxPointID: curMaxPointID,
+        maxPointLineSlope: curMaxDy / curMaxDx,
+        targetPoint: [curMaxXX, curMaxYY],
       });
     });
   } else
@@ -378,6 +388,7 @@ function findFurthestPoint(curPoints, epsilon) {
 function highlight_furthest(curPoints, epsilon, maxObj) {
   disableNextBtn();
   descriptiveTextDiv.innerHTML = messages.foundFurthestPoint;
+  console.log('max Obj: ', maxObj);
 
   const maxLineID = 'distanceLine' + maxObj.maxPointID;
   // Removing all of the non-furthest lines and highlighting the furthest
@@ -411,6 +422,68 @@ function highlight_furthest(curPoints, epsilon, maxObj) {
         enableNextBtn();
       });
   }
+
+  FUNC_QUEUE.push(() => {
+    showEpsilonNextToFurthest(curPoints, epsilon, maxObj);
+  });
+}
+
+function showEpsilonNextToFurthest(curPoints, epsilon, maxObj) {
+  disableNextBtn();
+  descriptiveTextDiv.innerHTML = messages.drawingEpsilonNextToFurthest;
+
+  const slope = maxObj.maxPointLineSlope;
+  const targetPointX = maxObj.targetPoint[0];
+  const targetPointY = maxObj.targetPoint[1];
+  const xStart = maxObj.maxPoint[0];
+  const yStart = maxObj.maxPoint[1];
+
+  const c = Math.sqrt(epsilon ** 2 / (slope ** 2 + 1));
+  const slopeSign = slope > 0 ? 1 : -1;
+
+  var xEnd;
+  var yEnd;
+
+  if (slope === Number.POSITIVE_INFINITY || slope === Number.NEGATIVE_INFINITY) {
+    // occurs when slope is undefined
+    xEnd = targetPointX;
+    yEnd = yStart > targetPointY ? yStart - epsilon : yStart + epsilon;
+  } else if (xStart > targetPointX) {
+    console.log('in alternate ');
+    xEnd = xStart - c;
+    yEnd = yStart - slope * c;
+  } else {
+    xEnd = xStart + c;
+    yEnd = yStart + slope * c;
+  }
+  const xMax = svgContainer.width;
+  const yMax = svgContainer.height;
+
+  if (xEnd > xMax) xEnd = xMax;
+  else if (xEnd < 0) xEnd = 0;
+  if (yEnd > yMax) yEnd = yMax;
+  else if (yEnd < 0) yEnd = 0;
+
+  const epsilonLineId = `epsilon-${xStart}-${yStart}`;
+
+  svgContainer
+    .append('line')
+    .attr('stroke-width', 2)
+    .attr('stroke', '#FF69B4')
+    .attr('id', epsilonLineId)
+    .attr('x1', xStart)
+    .attr('y1', yStart)
+    .attr('x2', xStart)
+    .attr('y2', yStart);
+  svgContainer
+    .select('#' + epsilonLineId)
+    .transition()
+    .duration(timeUnit)
+    .attr('x2', xEnd)
+    .attr('y2', yEnd)
+    .on('end', () => {
+      enableNextBtn();
+    });
 
   FUNC_QUEUE.push(() => {
     breakLineIntoTwo(curPoints, epsilon, maxObj);

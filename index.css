@@ -1,7 +1,7 @@
 .sidebar {
   /* with help from https://www.w3schools.com/howto/howto_css_fixed_sidebar.asp */
   height: 100%;
-  width: 350px;
+  width: 500px;
   position: fixed;
   z-index: 1;
   top: 0;
@@ -34,7 +34,7 @@
 .RDP {
   margin-top: 20px;
   margin-bottom: 20px;
-  margin-left: 350px;
+  margin-left: 500px;
   padding: 0px 10px;
   width: '100%';
   min-height: 90% !important;
