@@ -388,7 +388,6 @@ function findFurthestPoint(curPoints, epsilon) {
 function highlight_furthest(curPoints, epsilon, maxObj) {
   disableNextBtn();
   descriptiveTextDiv.innerHTML = messages.foundFurthestPoint;
-  console.log('max Obj: ', maxObj);
 
   const maxLineID = 'distanceLine' + maxObj.maxPointID;
   // Removing all of the non-furthest lines and highlighting the furthest
@@ -435,11 +434,10 @@ function showEpsilonNextToFurthest(curPoints, epsilon, maxObj) {
   const slope = maxObj.maxPointLineSlope;
   const targetPointX = maxObj.targetPoint[0];
   const targetPointY = maxObj.targetPoint[1];
-  const xStart = maxObj.maxPoint[0];
-  const yStart = maxObj.maxPoint[1];
+  const xMaxDistancePoint = maxObj.maxPoint[0];
+  const yMaxDistancePoint = maxObj.maxPoint[1];
 
   const c = Math.sqrt(epsilon ** 2 / (slope ** 2 + 1));
-  const slopeSign = slope > 0 ? 1 : -1;
 
   var xEnd;
   var yEnd;
@@ -447,14 +445,14 @@ function showEpsilonNextToFurthest(curPoints, epsilon, maxObj) {
   if (slope === Number.POSITIVE_INFINITY || slope === Number.NEGATIVE_INFINITY) {
     // occurs when slope is undefined
     xEnd = targetPointX;
-    yEnd = yStart > targetPointY ? yStart - epsilon : yStart + epsilon;
-  } else if (xStart > targetPointX) {
-    console.log('in alternate ');
-    xEnd = xStart - c;
-    yEnd = yStart - slope * c;
+    yEnd =
+      yMaxDistancePoint > targetPointY ? yMaxDistancePoint - epsilon : yMaxDistancePoint + epsilon;
+  } else if (xMaxDistancePoint > targetPointX) {
+    xEnd = xMaxDistancePoint - c;
+    yEnd = yMaxDistancePoint - slope * c;
   } else {
-    xEnd = xStart + c;
-    yEnd = yStart + slope * c;
+    xEnd = xMaxDistancePoint + c;
+    yEnd = yMaxDistancePoint + slope * c;
   }
   const xMax = svgContainer.width;
   const yMax = svgContainer.height;
@@ -464,17 +462,17 @@ function showEpsilonNextToFurthest(curPoints, epsilon, maxObj) {
   if (yEnd > yMax) yEnd = yMax;
   else if (yEnd < 0) yEnd = 0;
 
-  const epsilonLineId = `epsilon-${xStart}-${yStart}`;
+  const epsilonLineId = `epsilon-${xMaxDistancePoint}-${yMaxDistancePoint}`;
 
   svgContainer
     .append('line')
     .attr('stroke-width', 2)
     .attr('stroke', '#FF69B4')
     .attr('id', epsilonLineId)
-    .attr('x1', xStart)
-    .attr('y1', yStart)
-    .attr('x2', xStart)
-    .attr('y2', yStart);
+    .attr('x1', xMaxDistancePoint)
+    .attr('y1', yMaxDistancePoint)
+    .attr('x2', xMaxDistancePoint)
+    .attr('y2', yMaxDistancePoint);
   svgContainer
     .select('#' + epsilonLineId)
     .transition()
@@ -494,6 +492,8 @@ function breakLineIntoTwo(curPoints, epsilon, maxObj) {
   disableNextBtn();
 
   const idOfDistanceLineToRemove = 'distanceLine' + maxObj.maxPointID;
+  const idOfEpsilonLineToRemove = `epsilon-${maxObj.maxPoint[0]}-${maxObj.maxPoint[1]}`;
+
   const idOfCurLine =
     'a' +
     curPoints[0].toString().replace(',', 'l') +
@@ -507,6 +507,16 @@ function breakLineIntoTwo(curPoints, epsilon, maxObj) {
     .style('fill-opacity', 0)
     .on('end', () => {
       svgContainer.select('#' + idOfDistanceLineToRemove).remove();
+    });
+
+  svgContainer
+    .select('#' + idOfEpsilonLineToRemove)
+    .transition()
+    .duration(timeUnit)
+    .style('stroke-opacity', 0)
+    .style('fill-opacity', 0)
+    .on('end', () => {
+      svgContainer.select('#' + idOfEpsilonLineToRemove).remove();
     });
 
   if (maxObj.maxDistance > epsilon) {
