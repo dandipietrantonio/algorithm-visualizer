@@ -31,13 +31,57 @@ const timeUnit = 250;
 FUNC_STACK = []; // represents the recursion stack
 FUNC_QUEUE = []; // next function that should be called; when empty, pop from FUNC_STACK
 
-var pointsArr = [];
-var pointCircles = [];
-var blackLines = [];
+var pointsArr = [
+  [164, 43],
+  [83, 167],
+  [153, 295],
+  [115, 426],
+  [336, 443],
+  [399, 263],
+  [467, 150],
+  [582, 242],
+  [593, 398],
+  [492, 523],
+  [531, 589],
+  [697, 572],
+];
+var pointCircles = [
+  { x_axis: 164, y_axis: 43, radius: 6, color: 'black' },
+  { x_axis: 83, y_axis: 167, radius: 6, color: 'black' },
+  { x_axis: 153, y_axis: 295, radius: 6, color: 'black' },
+  { x_axis: 115, y_axis: 426, radius: 6, color: 'black' },
+  { x_axis: 336, y_axis: 443, radius: 6, color: 'black' },
+  { x_axis: 399, y_axis: 263, radius: 6, color: 'black' },
+  { x_axis: 467, y_axis: 150, radius: 6, color: 'black' },
+  { x_axis: 582, y_axis: 242, radius: 6, color: 'black' },
+  { x_axis: 593, y_axis: 398, radius: 6, color: 'black' },
+  { x_axis: 492, y_axis: 523, radius: 6, color: 'black' },
+  { x_axis: 531, y_axis: 589, radius: 6, color: 'black' },
+  { x_axis: 697, y_axis: 572, radius: 6, color: 'black' },
+];
+var blackLines = [
+  { id: 'a1644383167', x1: 164, y1: 43, x2: 83, y2: 167 },
+  { id: 'a83167153295', x1: 83, y1: 167, x2: 153, y2: 295 },
+  { id: 'a153295115426', x1: 153, y1: 295, x2: 115, y2: 426 },
+  { id: 'a115426336443', x1: 115, y1: 426, x2: 336, y2: 443 },
+  { id: 'a336443399263', x1: 336, y1: 443, x2: 399, y2: 263 },
+  { id: 'a399263467150', x1: 399, y1: 263, x2: 467, y2: 150 },
+  { id: 'a467150582242', x1: 467, y1: 150, x2: 582, y2: 242 },
+  { id: 'a582242593398', x1: 582, y1: 242, x2: 593, y2: 398 },
+  { id: 'a593398492523', x1: 593, y1: 398, x2: 492, y2: 523 },
+  { id: 'a492523531589', x1: 492, y1: 523, x2: 531, y2: 589 },
+  { id: 'a531589697572', x1: 531, y1: 589, x2: 697, y2: 572 },
+];
 
-var distancePoints = [];
-var distancePointCircles = [];
-var distanceLine = [];
+var distancePoints = [
+  [117, 90],
+  [316, 101],
+];
+var distancePointCircles = [
+  { x_axis: 117, y_axis: 90, radius: 6, color: '#FF69B4' },
+  { x_axis: 316, y_axis: 101, radius: 6, color: '#FF69B4' },
+];
+var distanceLine = [{ id: 'a11790316101', x1: 117, y1: 90, x2: 316, y2: 101 }];
 
 var distanceContainer = d3
   .select('#RDP')
@@ -46,72 +90,33 @@ var distanceContainer = d3
   .attr('width', '100%')
   .attr('height', '20%');
 
-// This click handler is based on the handler from http://bl.ocks.org/WilliamQLiu/76ae20060e19bf42d774
-distanceContainer.on('click', (event) => {
-  if (!RUNNING_RDP) {
-    // don't want to add points while the algorithm is running
-    var coords = d3.pointer(event);
+var distanceCircles = distanceContainer
+  .selectAll('circle') // For new circle, go through the update process
+  .data(distancePointCircles)
+  .enter()
+  .append('circle');
 
-    // Normally we go from data to pixels, but here we're doing pixels to data
-    var clickCoords = [
-      Math.round(coords[0]), // Takes the pixel number to convert to number
-      Math.round(coords[1]),
-    ];
+var circleAttributes = distanceCircles
+  .attr('cx', (d) => d.x_axis)
+  .attr('cy', (d) => d.y_axis)
+  .attr('r', (d) => d.radius)
+  .style('fill', (d) => d.color);
 
-    if (distancePoints.length !== 2) {
-      distancePoints.push([clickCoords[0], clickCoords[1]]);
+var lines = distanceContainer.selectAll('line').data(distanceLine).enter().append('line');
 
-      distancePointCircles.push({
-        x_axis: clickCoords[0],
-        y_axis: clickCoords[1],
-        radius: 6,
-        color: '#FF69B4',
-      });
-
-      if (distancePoints.length > 1) {
-        const endIndex = distancePointCircles.length - 1;
-        distanceLine.push({
-          id:
-            'a' +
-            distancePoints[endIndex - 1].toString().replace(',', '') +
-            distancePoints[endIndex].toString().replace(',', ''),
-          x1: distancePoints[endIndex - 1][0],
-          y1: distancePoints[endIndex - 1][1],
-          x2: distancePoints[endIndex][0],
-          y2: distancePoints[endIndex][1],
-        });
-      }
-
-      var distanceCircles = distanceContainer
-        .selectAll('circle') // For new circle, go through the update process
-        .data(distancePointCircles)
-        .enter()
-        .append('circle');
-
-      var circleAttributes = distanceCircles
-        .attr('cx', (d) => d.x_axis)
-        .attr('cy', (d) => d.y_axis)
-        .attr('r', (d) => d.radius)
-        .style('fill', (d) => d.color);
-
-      var lines = distanceContainer.selectAll('line').data(distanceLine).enter().append('line');
-
-      var lineAttributes = lines
-        .attr('stroke-width', 2)
-        .attr('stroke', '#FF69B4')
-        .attr('id', (d) => d.id)
-        .attr('x1', (d) => d.x1)
-        .attr('y1', (d) => d.y1)
-        .attr('x2', (d) => d.x2)
-        .attr('y2', (d) => d.y2);
-      if (distancePoints.length === 2) {
-        a = Math.abs(distancePoints[0][0] - distancePoints[1][0]);
-        b = Math.abs(distancePoints[0][1] - distancePoints[1][1]);
-        EPSILON = Math.sqrt(a ** 2 + b ** 2);
-      }
-    }
-  }
-});
+var lineAttributes = lines
+  .attr('stroke-width', 2)
+  .attr('stroke', '#FF69B4')
+  .attr('id', (d) => d.id)
+  .attr('x1', (d) => d.x1)
+  .attr('y1', (d) => d.y1)
+  .attr('x2', (d) => d.x2)
+  .attr('y2', (d) => d.y2);
+if (distancePoints.length === 2) {
+  a = Math.abs(distancePoints[0][0] - distancePoints[1][0]);
+  b = Math.abs(distancePoints[0][1] - distancePoints[1][1]);
+  EPSILON = Math.sqrt(a ** 2 + b ** 2);
+}
 
 var svgContainer = d3
   .select('#RDP')
@@ -120,74 +125,28 @@ var svgContainer = d3
   .attr('width', '100%')
   .attr('height', '80%');
 
-// This click handler is based on the handler from http://bl.ocks.org/WilliamQLiu/76ae20060e19bf42d774
-svgContainer.on('click', (event) => {
-  if (!RUNNING_RDP) {
-    // don't want to add points while the algorithm is running
-    var coords = d3.pointer(event);
+var circles = svgContainer
+  .selectAll('circle') // For new circle, go through the update process
+  .data(pointCircles)
+  .enter()
+  .append('circle');
 
-    // Normally we go from data to pixels, but here we're doing pixels to data
-    var clickCoords = [
-      Math.round(coords[0]), // Takes the pixel number to convert to number
-      Math.round(coords[1]),
-    ];
+var circleAttributes = circles
+  .attr('cx', (d) => d.x_axis)
+  .attr('cy', (d) => d.y_axis)
+  .attr('r', (d) => d.radius)
+  .style('fill', (d) => d.color);
 
-    duplicateClick = false;
-    pointsArr.forEach((point) => {
-      if (point[0] === clickCoords[0] && point[1] === clickCoords[1]) {
-        duplicateClick = true;
-      }
-    });
+var lines = svgContainer.selectAll('line').data(blackLines).enter().append('line');
 
-    if (!duplicateClick) {
-      pointsArr.push([clickCoords[0], clickCoords[1]]);
-
-      pointCircles.push({
-        x_axis: clickCoords[0],
-        y_axis: clickCoords[1],
-        radius: 6,
-        color: 'black',
-      });
-
-      if (pointsArr.length > 1) {
-        const endIndex = pointCircles.length - 1;
-        blackLines.push({
-          id:
-            'a' +
-            pointsArr[endIndex - 1].toString().replace(',', '') +
-            pointsArr[endIndex].toString().replace(',', ''),
-          x1: pointsArr[endIndex - 1][0],
-          y1: pointsArr[endIndex - 1][1],
-          x2: pointsArr[endIndex][0],
-          y2: pointsArr[endIndex][1],
-        });
-      }
-    }
-  }
-
-  var circles = svgContainer
-    .selectAll('circle') // For new circle, go through the update process
-    .data(pointCircles)
-    .enter()
-    .append('circle');
-
-  var circleAttributes = circles
-    .attr('cx', (d) => d.x_axis)
-    .attr('cy', (d) => d.y_axis)
-    .attr('r', (d) => d.radius)
-    .style('fill', (d) => d.color);
-
-  var lines = svgContainer.selectAll('line').data(blackLines).enter().append('line');
-
-  var lineAttributes = lines
-    .attr('stroke-width', 2)
-    .attr('stroke', 'black')
-    .attr('id', (d) => d.id)
-    .attr('x1', (d) => d.x1)
-    .attr('y1', (d) => d.y1)
-    .attr('x2', (d) => d.x2)
-    .attr('y2', (d) => d.y2);
-});
+var lineAttributes = lines
+  .attr('stroke-width', 2)
+  .attr('stroke', 'black')
+  .attr('id', (d) => d.id)
+  .attr('x1', (d) => d.x1)
+  .attr('y1', (d) => d.y1)
+  .attr('x2', (d) => d.x2)
+  .attr('y2', (d) => d.y2);
 
 function drawLine(startPoint, endPoint, endFunc = () => {}) {
   disableNextBtn();
@@ -567,6 +526,14 @@ function start() {
   }
 
   RUNNING_RDP = true;
+
+  console.log('POINTS ARR: ', pointsArr);
+  console.log('POINTS CIR: ', pointCircles);
+  console.log('POINTS LIN: ', blackLines);
+  console.log('EPS ARR: ', distancePoints);
+  console.log('EPS CIR: ', distancePointCircles);
+  console.log('EPS LIN: ', distanceLine);
+
   disableStartBtn();
 
   svgContainer.selectAll('line').attr('stroke-dasharray', '10,10');
