@@ -1,0 +1,13 @@
+.pointContainer {
+  margin-top: 20px;
+  padding: 0px 10px;
+  width: '100%';
+  min-height: 60% !important;
+  height: 60%;
+}
+
+.lineList {
+  margin-bottom: 20px;
+  padding: 0px 10px;
+  width: '100%';
+}
